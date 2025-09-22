@@ -4,26 +4,40 @@
 
 module top(
     input logic     clk, 
-    input logic     SW, 
+    input logic     SW,
     input logic     BOOT, 
     output logic    RGB_R, 
     output logic    RGB_G, 
     output logic    RGB_B
 );
 
-    logic red, green, blue;
-
+    logic red, green, blue; //What does this line do in the example?
     logic [5:0] d;
+    logic [5:0] q;
     logic load;
+    logic south;
 
-    assign d = 6'b100000;
-    assign load = 1'b1;
+    initial begin
+        d = 6'b100000;
+    end
 
-    RGB_LED u0(
-        .clk    (clk),  
-        .RGB_R    (red), 
-        .RGB_G  (green), 
-        .RGB_B   (blue)
+    shiftreg #(.N(6)) u0(
+        .clk    (clk),
+        .reset  (~BOOT),
+        .load   (load),
+        .sin    (1'b0),
+        .d      (d),
+        .q      (q),
+        .south  (south)
+    );
+
+    //do I need to deifne it?
+    RGB_LED u1(
+        .clk    (clk), 
+        .q      (q),
+        .red    (red), 
+        .green  (green), 
+        .blue   (blue)
     );
 
     assign RGB_R = ~red;

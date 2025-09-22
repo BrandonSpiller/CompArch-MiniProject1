@@ -1,64 +1,77 @@
 // RGB LED controlled by shift register
 
-module shiftreg # (parameter N = 6) //page 272 of textbook
+module shiftreg # 
+    (parameter N = 6) //page 272 of textbook
     (input logic    clk,
-    input logic     reset, load,
+    input logic     reset, 
+    input logic     load,
     input logic     sin,
     input logic     [N-1:0] d,
     output logic    [N-1:0] q,
     output logic    south
-);
+);  
+    parameter BLINK_INTERVAL = 2000000;
+    logic [$clog2(BLINK_INTERVAL) - 1:0] count = 0;
 
-always_ff @(posedge clk, posedge reset)
-    if (reset) 
-        q <= 0;
-    else if (load) 
-        q <= d;
-    //looping shift register
-    else 
-        q <= {q[N-2:0], q[N-1]};
+    always_ff @(posedge clk, posedge reset) begin
+            if (reset) begin
+                count <= 0;
+                q <= 6'b100000; // Load initial pattern on reset
+            end else begin
+                if (count == BLINK_INTERVAL - 1) begin
+                    count <= 0;
+                    if (load)
+                        q <= d;
+                    else
+                        q <= {q[N-2:0], q[N-1]}; // Rotate left
+                end else begin
+                    count <= count + 1;
+                end
+            end
+        end
 
-    assign south = q[N-1];
+        assign south = q[N-1];
 endmodule
 
 module RGB_LED(
     input logic     clk,
     input logic     rst,
     input logic [5:0] q, //shift register output
-    output logic    RGB_R,
-    output logic    RGB_G,
-    output logic    RGB_B,
+    output logic    red,
+    output logic    green,
+    output logic    blue
 );
-endmodule
 
-always_comb begin
-        RGB_R = 1;
-        RGB_G = 1;
-        RGB_B = 1;
+always @(*) begin
+        red = 1;
+        green = 1;
+        blue = 1;
+
 
     if (q[0]) begin //RED 
-        RGB_R = 0;
-        RGB_G = 1;
-        RGB_B = 1;
+        red = 0;
+        green = 1;
+        blue = 1;
     end else if (q[1]) begin //YELLOW
-        RGB_R = 0;
-        RGB_G = 0;
-        RGB_B = 1;
+        red = 0;
+        green = 0;
+        blue = 1;
     end else if (q[2]) begin //GREEN
-        RGB_R = 1;
-        RGB_G = 0;
-        RGB_B = 1;
+        red = 1;
+        green = 0;
+        blue = 1;
     end else if (q[3]) begin //CYAN
-        RGB_R = 1;
-        RGB_G = 0;
-        RGB_B = 0;
+        red = 1;
+        green = 0;
+        blue = 0;
     end else if (q[4]) begin //BLUE
-        RGB_R = 1;
-        RGB_G = 1;
-        RGB_B = 0;
+        red = 1;
+        green = 1;
+        blue = 0;
     end else if (q[5]) begin //MAGENTA
-        RGB_R = 0;
-        RGB_G = 1;
-        RGB_B = 0;
+        red = 0;
+        green = 1;
+        blue = 0;
     end
 end
+endmodule
